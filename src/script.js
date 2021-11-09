@@ -2,6 +2,7 @@ import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Earcut } from 'three/src/extras/Earcut'
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
 import * as dat from 'dat.gui'
 import axiosInstance from './helper'
 
@@ -83,32 +84,59 @@ export const drawBuild = points => {
 axiosInstance.get('/floor').then(response => {
   console.log('response')
   console.log('floor data', response.data)
-  // 一层楼
+  // B1层楼
   const coordinates = response.data[0].coordinate
   console.log('coordinates', coordinates)
 
   //   console.log('---sub----', THREE.Face3)
-  const width = 1920
-  const height = 700
+  const width = window.innerWidth
+  const height = window.innerHeight
   const scene = new THREE.Scene()
 
   // 设置摄像机位置，并将其朝向场景
-  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000)
+  const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
   //设置三维坐标
   camera.position.set(0, 100, 0)
   //设置相机看上边的坐标
-  camera.lookAt(scene.position)
+  // camera.lookAt(scene.position)
+  camera.lookAt(0, 0, 0)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(window.devicePixelRatio)
   renderer.setClearColor(0x000000, 0)
-  renderer.setSize(width, height)
+  renderer.setSize(window.innerWidth, window.innerHeight)
   document.body.appendChild(renderer.domElement)
+
+  // 场景控制器
+  const orbit = new OrbitControls(camera, renderer.domElement)
+  // orbit.enableRotate = false
+  //设置相机的角度范围
+  orbit.maxPolarAngle = Math.PI / 2
+  //设置相机距离原点的距离
+  orbit.maxDistance = 2000
+  orbit.minDistance = 300
+  // 设置控制器垂直旋转的角度
+  orbit.maxPolarAngle = Math.PI * 2
+  orbit.minPolarAngle = -Math.PI * 2
+  orbit.mouseButtons = {
+    LEFT: THREE.MOUSE.PAN,
+    MIDDLE: THREE.MOUSE.DOLLY,
+    RIGHT: THREE.MOUSE.ROTATE,
+  }
+  orbit.update()
+
   scene.add(new THREE.AxesHelper(10))
   const floorGroup = new THREE.Group()
 
-  const scale = 30
+  // 物体转换控制器
+  const trans = new TransformControls(camera, renderer.domElement)
+  trans.setMode('translate')
+  // 默认关闭Y轴 (rotate才开启). scale translate 不允许Y轴上的变动
+  // trans.showY = false
+  scene.add(trans)
 
+  // 画楼层和建筑
+  const scale = 8
   const floorCordinates = coordinates[0].map(p => [
     p[0] / scale,
     0,
@@ -126,22 +154,18 @@ axiosInstance.get('/floor').then(response => {
     const g = new THREE.Group()
     floorGroup.add(g)
     g.add(drawBuild(points.map(p => [p[0] / scale, 0, p[1] / scale])))
-
-    // const gg = new THREE.Group()
-    // floorGroup.add(gg)
-    // g.add(drawBuild(points.map(p => [p[0] + 100, 0, p[1] + 10])))
   }
-  //   const building = coordinates
-  //     .slice(1)
-  //     .map(points => drawBuild(points.map(p => [p[0], 0, p[1]])))
-  //   console.log(building.length)
-  //   group.add(...building)
 
-  //   const points = coordinates[14]
-  //   console.log('coordinates 1', points)
-  //   group.add(drawBuild(points.map(p => [p[0], 0, p[1]])))
   scene.add(floorGroup)
 
-  renderer.render(scene, camera)
-  //   requestAnimationFrame(renderer)
+  // renderer.render(scene, camera)
+  const animate = () => {
+    requestAnimationFrame(animate)
+
+    // required if controls.enableDamping or controls.autoRotate are set to true
+    orbit.update()
+
+    renderer.render(scene, camera)
+  }
+  animate()
 })
