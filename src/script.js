@@ -96,7 +96,7 @@ axiosInstance.get('/floor').then(response => {
   // 设置摄像机位置，并将其朝向场景
   const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
   //设置三维坐标
-  camera.position.set(0, 100, 0)
+  camera.position.set(100, 100, 100)
   //设置相机看上边的坐标
   // camera.lookAt(scene.position)
   camera.lookAt(0, 0, 0)
