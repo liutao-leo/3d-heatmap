@@ -8,7 +8,6 @@ import axiosInstance from './helper'
 import floorData from './floor.json'
 import heatmapInstance from './heatmap'
 
-const buildColors = [0x219fd4, 0x24aee8, 0x4ec1f1]
 const getGeometry = (points, height) => {
   if (points.length < 3) return
   const totalPoints = points.concat(
@@ -48,6 +47,7 @@ const getGeometry = (points, height) => {
   const geometry = new THREE.Geometry()
   geometry.vertices = vertices
   geometry.faces = faces
+  geometry.computeFaceNormals()
   return geometry
 }
 
@@ -71,15 +71,15 @@ export const drawBuild = points => {
   // console.log(points)
   // build = [...points]
   const geometry = getGeometry(points, 10)
-  const material = new THREE.MeshBasicMaterial({
-    color: buildColors[Math.ceil(Math.random() * 2)],
+  const material = new THREE.MeshLambertMaterial({
+    color: 0x049ef4,
     side: THREE.DoubleSide,
   })
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xdedede })
-  const lineGeo = new THREE.EdgesGeometry(geometry)
-  const lineMesh = new THREE.LineSegments(lineGeo, lineMaterial)
+  // const lineMaterial = new THREE.LineBasicMaterial({ color: 0xdedede })
+  // const lineGeo = new THREE.EdgesGeometry(geometry)
+  // const lineMesh = new THREE.LineSegments(lineGeo, lineMaterial)
   const mesh = new THREE.Mesh(geometry, material)
-  mesh.add(lineMesh)
+  // mesh.add(lineMesh)
   return mesh
 }
 
@@ -104,99 +104,6 @@ export const drawHeatMap = heatCanvas => {
   return mesh
 }
 
-// axiosInstance.get('/floor').then(response => {
-//   console.log('response')
-//   console.log('floor data', response.data)
-//   console.log(document.getElementById('heatmap'))
-//   // F1层楼
-//   const coordinates = response.data[3].coordinate
-//   console.log('coordinates', coordinates)
-
-//   const heatmap = document.getElementById('heatmap')
-
-//   //   console.log('---sub----', THREE.Face3)
-//   const width = heatmap.clientWidth
-//   const height = heatmap.clientHeight
-//   // const width = window.innerWidth
-//   // const height = window.innerHeight
-//   const scene = new THREE.Scene()
-//   // 设置摄像机位置，并将其朝向场景
-//   const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000)
-//   //设置三维坐标
-//   camera.position.set(100, 100, 100)
-//   //设置相机看上边的坐标
-//   // camera.lookAt(scene.position)
-//   camera.lookAt(0, 0, 0)
-
-//   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-//   renderer.setPixelRatio(window.devicePixelRatio)
-//   renderer.setClearColor(0x000000, 0)
-//   renderer.setSize(width, height)
-//   heatmap.appendChild(renderer.domElement)
-
-//   // 场景控制器
-//   const orbit = new OrbitControls(camera, renderer.domElement)
-//   // orbit.enableRotate = false
-//   //设置相机的角度范围
-//   orbit.maxPolarAngle = Math.PI / 2
-//   //设置相机距离原点的距离
-//   orbit.maxDistance = 1000
-//   orbit.minDistance = 400
-//   // 设置控制器垂直旋转的角度
-//   orbit.maxPolarAngle = Math.PI * 2
-//   orbit.minPolarAngle = -Math.PI * 2
-//   orbit.mouseButtons = {
-//     LEFT: THREE.MOUSE.PAN,
-//     MIDDLE: THREE.MOUSE.DOLLY,
-//     RIGHT: THREE.MOUSE.ROTATE,
-//   }
-//   orbit.update()
-
-//   scene.add(new THREE.AxesHelper(10))
-//   const floorGroup = new THREE.Group()
-
-//   // 物体转换控制器
-//   const trans = new TransformControls(camera, renderer.domElement)
-//   trans.setMode('translate')
-//   // 默认关闭Y轴 (rotate才开启). scale translate 不允许Y轴上的变动
-//   // trans.showY = false
-//   scene.add(trans)
-
-//   // 画楼层和建筑
-//   const scale = 8
-//   // const floorCordinates = coordinates[0].map(p => [
-//   //   p[0] / scale,
-//   //   0,
-//   //   p[1] / scale,
-//   // ])
-//   // console.log('floor cordinates', floorCordinates)
-
-//   // floorGroup.add(drawFloor(1, floorCordinates))
-
-//   const end = coordinates.length
-
-//   for (let i = 0; i < end; i++) {
-//     const points = coordinates[i]
-//     console.log(`coordinates ${i}`, points)
-//     const g = new THREE.Group()
-//     floorGroup.add(g)
-//     g.add(drawBuild(points.map(p => [p[0] / scale, 0, p[1] / scale])))
-//   }
-
-//   scene.add(floorGroup)
-
-//   // renderer.render(scene, camera)
-//   const animate = () => {
-//     requestAnimationFrame(animate)
-
-//     // required if controls.enableDamping or controls.autoRotate are set to true
-//     orbit.update()
-
-//     renderer.render(scene, camera)
-//   }
-//   animate()
-// })
-
 function draw() {
   // console.log('response')
   // console.log('floor data', response.data)
@@ -220,10 +127,18 @@ function draw() {
   // 设置摄像机位置，并将其朝向场景
   const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000)
   //设置三维坐标
-  camera.position.set(0, 100, 100)
+  camera.position.set(100, 100, 100)
   //设置相机看上边的坐标
   camera.lookAt(scene.position)
   // camera.lookAt(0, 0, 0)
+
+  //环境光:环境光颜色RGB成分分别和物体材质颜色RGB成分分别相乘
+  const ambient = new THREE.AmbientLight(0x404040)
+  //环境光对象添加到scene场景中
+  scene.add(ambient)
+  const light = new THREE.DirectionalLight(0xffffff, 1)
+  light.position.set(50, 70, 80)
+  scene.add(light)
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(window.devicePixelRatio)
@@ -248,16 +163,16 @@ function draw() {
     RIGHT: THREE.MOUSE.ROTATE,
   }
   orbit.update()
-
-  scene.add(new THREE.AxesHelper(10))
+  // 坐标轴
+  // scene.add(new THREE.AxesHelper(10))
   const floorGroup = new THREE.Group()
 
   // 物体转换控制器
-  const trans = new TransformControls(camera, renderer.domElement)
-  trans.setMode('translate')
-  // 默认关闭Y轴 (rotate才开启). scale translate 不允许Y轴上的变动
-  // trans.showY = false
-  scene.add(trans)
+  // const trans = new TransformControls(camera, renderer.domElement)
+  // trans.setMode('translate')
+  // // 默认关闭Y轴 (rotate才开启). scale translate 不允许Y轴上的变动
+  // // trans.showY = false
+  // scene.add(trans)
 
   // 画楼层和建筑
   const scale = 8
